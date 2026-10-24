@@ -110,9 +110,9 @@ const clash=(r,ig)=>S.res.find(x=>x.id!==ig&&x.room==r.room&&x.bed==r.bed&&x.dat
 const dayRes=(room,bed,date)=>S.res.filter(x=>x.room==room&&x.bed==bed&&x.date==date).sort((a,b)=>a.start-b.start);
 const covers=(room,bed,date,t)=>S.res.find(x=>x.room==room&&x.bed==bed&&x.date==date&&x.start<=t&&t<x.end);
 function union(list){let tot=0,e=-1,s0=0;[...list].sort((a,b)=>a.start-b.start).forEach(x=>{if(x.start>e){if(e>=0)tot+=e-s0;s0=x.start;e=x.end}else e=Math.max(e,x.end)});return tot+(e>=0?e-s0:0)}
-function vis(room,bed){const rs=dayRes(room,bed,U.date),o=!!covers(room,bed,U.date,U.time),q=U.q.trim().toLowerCase();
+function vis(room,bed){const rs=dayRes(room,bed,U.date),q=U.q.trim().toLowerCase();
  if(U.fRoom&&U.fRoom!=room)return false;
- if(U.fStatus=='available'&&o)return false;if(U.fStatus=='occupied'&&!o)return false;
+if(U.fStatus=='available'&&!freeWin(room,bed,U.date).length)return false;if(U.fStatus=='occupied'&&!rs.length)return false;
  if(U.fCI&&!rs.some(x=>x.ci==U.fCI))return false;
  if(q&&!room.toLowerCase().includes(q)&&!rs.some(x=>x.ci.toLowerCase().includes(q)))return false;return true}
 const WARD='GENWARD',bedsOf=r=>r==WARD?[...Array(S.rooms[r]).keys()].map(i=>i+1):[0],loc=(r,b)=>b?`${r} — Bed ${b}`:r;
@@ -137,7 +137,7 @@ function render(){
  <div class="bar"><input id="q" placeholder="Search instructor or room…" value="${esc(U.q)}" oninput="U.q=this.value;renderMain()">
  <select onchange="U.fRoom=this.value;renderMain()">${o([['','All rooms'],...ROOMS.map(r=>[r,r])],U.fRoom)}</select>
  <select onchange="U.fCI=this.value;renderMain()">${o([['','All instructors'],...cis.map(c=>[c,'CI '+c])],U.fCI)}</select>
- <select onchange="U.fStatus=this.value;renderMain()">${o([['','Any status'],['available','Available'],['occupied','Occupied']],U.fStatus)}</select>
+ <select onchange="U.fStatus=this.value;renderMain()">${o([['','Any status'],['available','Has free time'],['occupied','Has reservations']],U.fStatus)}</select>
  <label>Date <input type="date" value="${U.date}" onchange="setDate(this.value)"></label>
  <label>Status at <select onchange="U.time=+this.value;render()">${o(slots.map(s=>[s,t2s(s)]),U.time)}</select></label>
  ${U.page=='res'?`<button class="btn${U.view=='week'?' navy':' ghost'}" onclick="U.view='week';render()">Weekly Room Schedule</button><button class="btn${U.view=='list'?' navy':' ghost'}" onclick="U.view='list';render()">Daily Reservation List</button>`:''}</div>`;
