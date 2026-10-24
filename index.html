@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clinical Room Reservation System</title>
+<style>
+:root{--navy:#12305c;--teal:#0e8f9b;--g:#d9f2e3;--gd:#2e9e5b;--r:#d64545;--b:#2f7de1;--bg:#f5f8fc;--line:#d9e1ec;--tx:#1d2a3a}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
+header{background:var(--navy);color:#fff;padding:14px 18px}
+h1{margin:0 0 10px;font-size:20px}
+.wrap{padding:14px 18px;max-width:1500px;margin:auto}
+.btn{border:0;border-radius:10px;padding:8px 14px;background:var(--teal);color:#fff;font-weight:600;cursor:pointer;font-size:13px}
+.btn.big{background:#fff;color:var(--navy);font-size:14px;padding:9px 18px}
+.btn.ghost{background:#e8eef6;color:var(--navy)}.btn.red{background:var(--r)}.btn.navy{background:var(--navy)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}
+.card b{display:block;font-size:26px;color:var(--navy)}.card span{font-size:12px;color:#5b6b80}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.bar input,.bar select,.mod input,.mod select,.mod textarea{padding:8px;border:1px solid #bcc8d8;border-radius:8px;font:inherit;background:#fff;max-width:100%}
+.wk{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}
+.day{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-weight:700;font-size:12px;color:var(--navy);text-align:center}
+.day small{display:block;font-weight:400;color:#5b6b80}
+.day.on{background:var(--navy);color:#fff}.day.on small{color:#cfe}
+.day.today{box-shadow:0 0 0 2px var(--teal)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;margin:8px 0}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
+.scroll{overflow:auto;max-height:70vh;background:#fff;border:1px solid var(--line);border-radius:14px}
+.tl{width:max-content;min-width:100%}
+.row{display:flex;border-bottom:1px solid var(--line)}
+.lab{position:sticky;left:0;width:175px;flex:none;background:#fff;z-index:2;padding:6px 8px;font-weight:600;border-right:1px solid var(--line)}
+.lab small{display:block;font-weight:400;font-size:10.5px;color:#5b6b80}
+.hd{position:sticky;top:0;z-index:4;background:#eef3fa}.hd .lab{background:#eef3fa;z-index:5}
+.sh{width:44px;flex:none;font-size:10px;text-align:center;padding:4px 0;border-left:1px solid var(--line);color:var(--navy)}
+.off{width:16px;flex:none;background:repeating-linear-gradient(45deg,#dfe3e8,#dfe3e8 4px,#eef0f3 4px,#eef0f3 8px)}
+.rh{background:#e6eef9;border-bottom:1px solid var(--line);cursor:pointer;padding:7px 0}
+.rh .in{position:sticky;left:8px;display:inline-flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tag{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;color:#fff}
+.tp{background:var(--gd)}.tf{background:var(--r)}
+.trk{display:flex;position:relative;height:64px}
+.c{width:44px;flex:none;background:var(--g);border-left:1px solid #fff;cursor:pointer}
+.c:hover{background:#b9e6cb}.c.sel{background:var(--b)}
+.blk{position:absolute;top:3px;bottom:3px;background:var(--r);color:#fff;border-radius:6px;padding:3px 5px;font-size:11px;line-height:1.25;overflow:hidden;cursor:pointer;white-space:nowrap;box-shadow:0 0 0 1px #fff}
+.blk span,.blk b{display:block;overflow:hidden;text-overflow:ellipsis}
+.blk.sm .bd,.blk.sm .d{display:none}
+.blk i{font-size:9px;background:#fff3;border-radius:4px;padding:0 3px;margin-left:3px}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left}th{background:#eef3fa;color:var(--navy)}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:14px}
+.chip{display:inline-block;margin:3px;padding:5px 10px;border-radius:20px;font-size:12px;color:#fff}
+.ov{position:fixed;inset:0;background:#0a1a3380;display:flex;align-items:center;justify-content:center;z-index:50;padding:10px}
+.mod{background:#fff;border-radius:14px;padding:20px;width:min(540px,100%);max-height:92vh;overflow:auto}
+.mod h2{margin:0 0 10px;color:var(--navy);font-size:18px}
+.mod label{display:block;font-weight:600;margin:8px 0;font-size:13px}
+.mod input,.mod select,.mod textarea{width:100%;margin-top:3px;font-weight:400}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.err{display:none;background:#fde8e8;color:#a11;padding:8px;border-radius:8px;margin:6px 0}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}dt{font-weight:700;color:var(--navy)}dd{margin:0}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:10px;z-index:99;display:none;max-width:90vw}
+.av{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.pn{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.pn h3{margin:0 0 6px;font-size:15px;color:var(--navy)}.pn small{color:#5b6b80}
+.it{display:block;border-left:4px solid var(--gd);background:#f0faf4;border-radius:8px;padding:6px 10px;margin:6px 0;cursor:pointer;font-size:13px}
+.it.u{border-color:var(--r);background:#fdeeee}.it span{display:block;color:#445}
+.bc{display:inline-block!important;margin:4px 10px 4px 0!important;font-weight:400!important}.mod .bc input{width:auto;margin:0 4px 0 0}
+.tabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}.tab{border:0;border-radius:10px;padding:9px 16px;font-weight:700;background:#ffffff26;color:#fff;cursor:pointer;font-size:14px}.tab.on{background:#fff;color:var(--navy)}
+.mb{position:relative;height:10px;background:#e5e9ef;border-radius:5px;overflow:hidden;margin:6px 0 2px}.mb i{position:absolute;top:0;bottom:0}.mb i.g{background:var(--gd)}.mb i.r{background:var(--r)}
+.sc{display:flex;justify-content:space-between;font-size:10px;color:#5b6b80}.ln{display:block;cursor:pointer;text-decoration:underline dotted}
+@media(max-width:700px){.av{grid-template-columns:1fr}}
+@media(max-width:600px){.g2{grid-template-columns:1fr}.lab{width:120px}}
+</style>
+</head>
+<body>
+<header><h1>🏥 Clinical Room Reservation System</h1><div id="hdr"></div></header>
+<div class="wrap"><div id="top"></div><div id="main"></div></div>
+<div id="modal"></div><div id="toast"></div>
+<input type="file" id="imp" accept=".csv" hidden onchange="importCsv(this)">
+<script>
+const ROOMS=['DR','OR','RR','ER','SIMR','GENWARD'],OPEN=450,CLOSE=1110,STEP=30,SW=44,KEY='clinres.v1';
+const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* ---------- date & time helpers (Asia/Manila) ---------- */
+const manilaToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila'}).format(new Date());
+const addDays=(s,n)=>{const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const dow=s=>new Date(s+'T00:00:00Z').getUTCDay();
+const monday=s=>{const d=dow(s);return d==0?addDays(s,1):addDays(s,-(d-1))};
+/* Two-week periods start every 14 days from this Monday (Oct 19 -> Nov 2 -> Nov 16 ...). A period ends after its Saturday. */
+const ANCHOR='2026-10-19',pstart=t=>{const x=dow(t)==0?addDays(t,1):t;return addDays(ANCHOR,Math.floor((Date.parse(x+'T00:00:00Z')-Date.parse(ANCHOR+'T00:00:00Z'))/864e5/14)*14)};
+const lbl=s=>new Date(s+'T00:00:00Z').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).toUpperCase();
+const t2s=m=>{const h=Math.floor(m/60);return (h%12||12)+':'+pad(m%60)+' '+(h<12?'AM':'PM')};
+const hm=m=>pad(Math.floor(m/60))+':'+pad(m%60);
+const dur=m=>{const h=Math.floor(m/60),r=m%60,p=[];if(h)p.push(h+(h==1?' hour':' hours'));if(r)p.push(r+' minutes');return p.join(' and ')||'0 minutes'};
+const sh=m=>(+(m/60).toFixed(2))+'h';
+const slots=[];for(let m=OPEN;m<CLOSE;m+=STEP)slots.push(m);
+function nowSlot(){const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date()).split(':');const m=+p[0]*60+ +p[1];return Math.min(1080,Math.max(OPEN,Math.floor(m/30)*30))}
+/* ---------- data ---------- */
+function demo(){const mo=pstart(manilaToday()),rooms={};ROOMS.forEach(r=>rooms[r]=5);
+ const mk=(i,ci,room,bed,off,s,e,g)=>({id:'s'+i,ci,room,bed,date:addDays(mo,off),start:s,end:e,group:g,remarks:'Sample data',sample:true});
+ return{rooms,res:[mk(1,'Maria Santos','DR',0,0,450,630,'BSN 3A'),mk(2,'John Reyes','GENWARD',4,0,600,720,'BSN 2B'),mk(3,'Anna Cruz','OR',0,0,480,600,'BSN 4A'),mk(4,'John Reyes','GENWARD',2,1,780,990,'BSN 3C'),mk(5,'Maria Santos','DR',0,1,600,720,'BSN 3A'),mk(6,'Ben Lim','GENWARD',1,0,450,570,'BSN 3B')]}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.rooms&&Array.isArray(d.res)){d.res.forEach(x=>{if(x.room!='GENWARD')x.bed=0});return d}}catch(e){}return demo()}
+let S=load();
+const save=()=>localStorage.setItem(KEY,JSON.stringify({rooms:S.rooms,res:S.res}));save();
+const U={today:manilaToday(),view:'week',page:'res',time:nowSlot(),open:{},q:'',fRoom:'',fCI:'',fStatus:'',all:false,form:null};
+U.date=dow(U.today)?U.today:addDays(U.today,1);U.ws=pstart(U.today);
+const days=()=>[0,1].flatMap(w=>[0,1,2,3,4,5].map(d=>addDays(U.ws,w*7+d)));
+/* ---------- core logic ---------- */
+const clash=(r,ig)=>S.res.find(x=>x.id!==ig&&x.room==r.room&&x.bed==r.bed&&x.date==r.date&&x.start<r.end&&r.start<x.end);
+const dayRes=(room,bed,date)=>S.res.filter(x=>x.room==room&&x.bed==bed&&x.date==date).sort((a,b)=>a.start-b.start);
+const covers=(room,bed,date,t)=>S.res.find(x=>x.room==room&&x.bed==bed&&x.date==date&&x.start<=t&&t<x.end);
+function union(list){let tot=0,e=-1,s0=0;[...list].sort((a,b)=>a.start-b.start).forEach(x=>{if(x.start>e){if(e>=0)tot+=e-s0;s0=x.start;e=x.end}else e=Math.max(e,x.end)});return tot+(e>=0?e-s0:0)}
+function vis(room,bed){const rs=dayRes(room,bed,U.date),o=!!covers(room,bed,U.date,U.time),q=U.q.trim().toLowerCase();
+ if(U.fRoom&&U.fRoom!=room)return false;
+ if(U.fStatus=='available'&&o)return false;if(U.fStatus=='occupied'&&!o)return false;
+ if(U.fCI&&!rs.some(x=>x.ci==U.fCI))return false;
+ if(q&&!room.toLowerCase().includes(q)&&!rs.some(x=>x.ci.toLowerCase().includes(q)))return false;return true}
+const WARD='GENWARD',bedsOf=r=>r==WARD?[...Array(S.rooms[r]).keys()].map(i=>i+1):[0],loc=(r,b)=>b?`${r} — Bed ${b}`:r;
+/* ---------- render ---------- */
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',3500)}
+function render(){
+ const D=days();let tb=0,oc=0;bedsOf(WARD).forEach(b=>{tb++;if(covers(WARD,b,U.date,U.time))oc++});
+ const cis=[...new Set(S.res.map(x=>x.ci))].sort();
+ const o=(a,v)=>a.map(x=>`<option value="${esc(x[0])}"${x[0]==v?' selected':''}>${esc(x[1])}</option>`).join('');
+ $('#hdr').innerHTML=`<div class="tabs"><button class="tab${U.page=='res'?' on':''}" onclick="U.page='res';render()">📅 Page 1: Reservations</button><button class="tab${U.page=='avail'?' on':''}" onclick="U.page='avail';render()">🏥 Page 2: Room Availability</button></div><div class="btns" style="margin:0"><button class="btn big" onclick="openForm()">+ New Reservation</button>
+ <button class="btn" onclick="bedsModal()">Configure GENWARD Beds</button><button class="btn" onclick="exportCsv()">Export CSV</button><button class="btn" onclick="$('#imp').click()">Import CSV</button>
+ <button class="btn" onclick="resetDemo()">Reset Demo Data</button><button class="btn" onclick="rmSamples()">Remove Sample Data</button><button class="btn red" onclick="clearAll()">Clear All Reservations</button></div>`;
+ $('#top').innerHTML=`<div class="cards">
+ <div class="card"><b>${ROOMS.length}</b><span>Total Rooms</span></div><div class="card"><b>${tb}</b><span>Total Beds (GENWARD)</span></div>
+ <div class="card"><b style="color:var(--gd)">${tb-oc}</b><span>Available Beds (${t2s(U.time)}, ${lbl(U.date)})</span></div>
+ <div class="card"><b style="color:var(--r)">${oc}</b><span>Occupied Beds (${t2s(U.time)})</span></div>
+ <div class="card"><b>${S.res.filter(x=>D.includes(x.date)).length}</b><span>Reservations, ${lbl(D[0])} – ${lbl(D[11])}</span></div></div>
+ <div class="bar"><button class="btn navy" onclick="nav(-7)">◀ Previous Week</button><button class="btn" onclick="goToday()">Today</button><button class="btn navy" onclick="nav(7)">Next Week ▶</button>
+ <b style="color:var(--navy)">${lbl(D[0])} – ${lbl(D[11])} (Mon–Sat, 2 weeks)</b></div>
+ ${[0,1].map(w=>`<div class="wk"><b>Week ${w+1}</b>${D.slice(w*6,w*6+6).map(d=>`<button class="day${d==U.date?' on':''}${d==U.today?' today':''}" onclick="goDate('${d}')">${lbl(d)}<small>${S.res.filter(x=>x.date==d).length} reserv.${d==U.today?' · TODAY':''}</small></button>`).join('')}</div>`).join('')}
+ <div class="legend"><span><i style="background:var(--g);border:1px solid var(--gd)"></i>Available</span><span><i style="background:var(--r)"></i>Occupied</span><span><i style="background:var(--b)"></i>Selected</span><span><i style="background:#cfd4da"></i>Outside operating hours (7:30 AM–7:30 PM)</span></div>
+ <div class="bar"><input id="q" placeholder="Search instructor or room…" value="${esc(U.q)}" oninput="U.q=this.value;renderMain()">
+ <select onchange="U.fRoom=this.value;renderMain()">${o([['','All rooms'],...ROOMS.map(r=>[r,r])],U.fRoom)}</select>
+ <select onchange="U.fCI=this.value;renderMain()">${o([['','All instructors'],...cis.map(c=>[c,'CI '+c])],U.fCI)}</select>
+ <select onchange="U.fStatus=this.value;renderMain()">${o([['','Any status'],['available','Available'],['occupied','Occupied']],U.fStatus)}</select>
+ <label>Date <input type="date" value="${U.date}" onchange="setDate(this.value)"></label>
+ <label>Status at <select onchange="U.time=+this.value;render()">${o(slots.map(s=>[s,t2s(s)]),U.time)}</select></label>
+ ${U.page=='res'?`<button class="btn${U.view=='week'?' navy':' ghost'}" onclick="U.view='week';render()">Weekly Room Schedule</button><button class="btn${U.view=='list'?' navy':' ghost'}" onclick="U.view='list';render()">Daily Reservation List</button>`:''}</div>`;
+ renderMain()}
+function renderMain(){$('#main').innerHTML=U.page=='avail'?availPage():(U.view=='week'?timeline():dailyList())}
+function freeWin(room,bed,date,ig){const out=[];let cur=OPEN;dayRes(room,bed,date).filter(x=>x.id!==ig).forEach(x=>{if(x.start>cur)out.push([cur,x.start]);cur=Math.max(cur,x.end)});if(cur<CLOSE)out.push([cur,CLOSE]);return out}
+const fwTxt=fw=>fw.map(w=>t2s(w[0])+' – '+t2s(w[1])).join(', ');
+function availPage(){let A='',N='',na=0,nu=0;
+ const seg=(w,c)=>`<i class="${c}" style="left:${(w[0]-OPEN)/720*100}%;width:${(w[1]-w[0])/720*100}%"></i>`;
+ ROOMS.forEach(r=>bedsOf(r).filter(b=>vis(r,b)).forEach(b=>{
+  const fw=freeWin(r,b,U.date),rs=dayRes(r,b,U.date),nm=`<b>${loc(r,b)}</b>`,
+  bar=`<div class="mb">${fw.map(w=>seg(w,'g')).join('')}${rs.map(x=>seg([x.start,x.end],'r')).join('')}</div><div class="sc"><span>7:30 AM</span><span>1:30 PM</span><span>7:30 PM</span></div>`;
+  if(fw.length){na++;const free=fw.reduce((a,w)=>a+w[1]-w[0],0);
+   A+=`<div class="it" onclick="cell('${r}',${b},${fw[0][0]},${Math.min(fw[0][1],fw[0][0]+60)})">${nm}<span>${rs.length?'Available: '+fwTxt(fw):'Available all day: 7:30 AM – 7:30 PM'}</span><span><small>Total free: ${dur(free)} · click to reserve</small></span>${bar}</div>`}
+  if(rs.length){nu++;
+   N+=`<div class="it u" style="cursor:default">${nm}${rs.map(x=>`<span class="ln" onclick="showRes('${x.id}')">${t2s(x.start)} – ${t2s(x.end)} · CI ${esc(x.ci)} (${dur(x.end-x.start)})</span>`).join('')}<span><small>${fw.length?'Booked '+dur(union(rs)):'Fully booked all day'}</small></span>${bar}</div>`}}));
+ return `<div class="av"><div class="pn"><h3>✅ Available Rooms &amp; Beds (${na})</h3><small>${lbl(U.date)} · 7:30 AM – 7:30 PM · times when the room or bed is free</small>${A||'<p>No room or bed has free time on this date.</p>'}</div>
+ <div class="pn"><h3>⛔ Unavailable Rooms &amp; Beds (${nu})</h3><small>${lbl(U.date)} · 7:30 AM – 7:30 PM · times when the room or bed is reserved</small>${N||'<p>No reservations on this date.</p>'}</div></div>`}
+function timeline(){
+ let h=`<div class="scroll"><div class="tl"><div class="row hd"><div class="lab">${lbl(U.date)}</div><div class="off"></div>${slots.map(s=>`<div class="sh">${t2s(s).replace(' ','<br>')}</div>`).join('')}<div class="off"></div></div>`,n=0;
+ ROOMS.forEach(r=>{const bs=bedsOf(r),free=bs.filter(b=>!covers(r,b,U.date,U.time)).length,vb=bs.filter(b=>vis(r,b));if(!vb.length)return;n++;
+  const open=U.open[r]!==false;
+  h+=`<div class="rh" onclick="tog('${r}')"><div class="in"><b>${open?'▼':'▶'} ${r}</b><span class="tag ${free?'tp':'tf'}">${r==WARD?(free?'PARTIALLY AVAILABLE':'FULLY OCCUPIED'):(free?'AVAILABLE':'OCCUPIED')}</span><small>${r==WARD?free+'/'+bs.length+' beds free':'Whole room'} at ${t2s(U.time)}</small></div></div>`;
+  if(open)vb.forEach(b=>h+=bedRow(r,b))});
+ if(!n)h+='<p style="padding:20px">No rooms or beds match the current filters.</p>';
+ return h+'</div></div>'}
+function bedRow(r,b){const rs=dayRes(r,b,U.date),tot=union(rs),f=U.form,sel=f&&f.room==r&&(f.beds||[f.bed]).includes(b)&&f.date==U.date;
+ const c=slots.map(s=>`<div class="c${sel&&s>=f.start&&s<f.end?' sel':''}" onclick="cell('${r}',${b},${s})" title="${t2s(s)} – ${t2s(s+30)}"></div>`).join('');
+ const bl=rs.map(x=>{const w=(x.end-x.start)/STEP*SW;return `<div class="blk${w<132?' sm':''}" style="left:${(x.start-OPEN)/STEP*SW}px;width:${w}px" onclick="showRes('${x.id}')" title="CI ${esc(x.ci)} — ${t2s(x.start)} – ${t2s(x.end)} (${dur(x.end-x.start)})"><b>CI ${esc(x.ci)}${x.sample?'<i>SAMPLE</i>':''}</b><span class="bd">${loc(r,b)}</span><span>${t2s(x.start)} – ${t2s(x.end)}</span><span class="d">Duration: ${dur(x.end-x.start)}</span></div>`}).join('');
+ return `<div class="row"><div class="lab">${b?'Bed '+b:'Whole room'}<small>${sh(tot)} reserved · ${rs.length} res. · ${sh(720-tot)} free</small></div><div class="off"></div><div class="trk">${c}${bl}</div><div class="off"></div></div>`}
+function dailyList(){const q=U.q.trim().toLowerCase();
+ let rs=S.res.filter(x=>(U.all||x.date==U.date)&&(!U.fRoom||x.room==U.fRoom)&&(!U.fCI||x.ci==U.fCI)&&(!q||x.room.toLowerCase().includes(q)||x.ci.toLowerCase().includes(q)));
+ rs.sort((a,b)=>a.date.localeCompare(b.date)||a.start-b.start);
+ let h=`<label><input type="checkbox" ${U.all?'checked':''} onchange="U.all=this.checked;renderMain()"> Show all dates (e.g. every reservation of one instructor)</label>
+ <h3 style="color:var(--navy)">${U.all?'All reservations':'Reservations on '+lbl(U.date)}</h3><div class="tw"><table><tr><th>Date</th><th>Time</th><th>Room / Bed</th><th>Clinical Instructor</th><th>Duration</th><th>Group</th><th></th></tr>`;
+ h+=rs.length?rs.map(x=>`<tr><td>${lbl(x.date)}</td><td>${t2s(x.start)} – ${t2s(x.end)}</td><td>${loc(x.room,x.bed)}</td><td>CI ${esc(x.ci)}${x.sample?' <span class="tag tf">SAMPLE</span>':''}</td><td>${dur(x.end-x.start)}</td><td>${esc(x.group)}</td><td><button class="btn ghost" onclick="showRes('${x.id}')">Details</button></td></tr>`).join(''):'<tr><td colspan="7">No reservations found.</td></tr>';
+ return h+'</table></div>'}
+/* ---------- navigation ---------- */
+function tog(r){U.open[r]=!(U.open[r]!==false);renderMain()}
+function nav(n){U.ws=addDays(U.ws,n);if(!days().includes(U.date))U.date=U.ws;render()}
+function goToday(){U.today=manilaToday();U.ws=pstart(U.today);U.date=dow(U.today)?U.today:addDays(U.today,1);render()}
+function goDate(d){U.date=d;if(!days().includes(d))U.ws=pstart(d);render()}
+function setDate(v){if(!v)return;if(dow(v)==0){toast('Sundays are not displayed. Choose Monday–Saturday.');return render()}goDate(v)}
+/* ---------- reservation form ---------- */
+const sopt=(a,v)=>a.map(s=>`<option value="${s}"${s==v?' selected':''}>${t2s(s)}</option>`).join('');
+function bedOpts(v){return bedsOf(v.room).map(b=>{const c=v.date&&v.start<v.end&&clash({...v,bed:b},U.form&&U.form.id);return `<option value="${b}"${b==v.bed?' selected':''}>${b?'Bed '+b:'Room'}${c?' — occupied (CI '+esc(c.ci)+')':' — free'}</option>`}).join('')}
+function openForm(id,pre){
+ const x=id?S.res.find(r=>r.id==id):{ci:'',room:'DR',bed:1,date:U.date,start:450,end:510,group:'',remarks:'',...pre};
+ U.form={...x,id:id||null,beds:[x.bed]};
+ $('#modal').innerHTML=`<div class="ov"><div class="mod"><h2>${id?'Edit':'New'} Reservation</h2><div id="err" class="err"></div>
+ <label>Clinical Instructor's Name *<input id="f_ci" maxlength="80" value="${esc(x.ci)}"></label>
+ <div class="g2"><label>Room *<select id="f_room" onchange="fch(1)">${ROOMS.map(r=>`<option${r==x.room?' selected':''}>${r}</option>`).join('')}</select></label>
+ <div id="f_bw" style="${x.room==WARD?'':'display:none'}"><b style="font-size:13px">Bed(s) *</b><div id="f_bg">${bedUI(U.form)}</div></div></div>
+ <label>Reservation Date * (Mon–Sat)<input type="date" id="f_date" value="${x.date}" onchange="fch()"></label>
+ <div class="g2"><label>Start Time *<select id="f_s" onchange="fch()">${sopt(slots,x.start)}</select></label>
+ <label>End Time *<select id="f_e" onchange="fch()">${sopt(slots.map(s=>s+30),x.end)}</select></label></div>
+ <p id="pv" style="font-weight:700;color:var(--navy)"></p><p id="fw" style="font-size:12px;color:#445;margin:0 0 6px"></p>
+ <label>Clinical Group/Section<input id="f_g" maxlength="60" value="${esc(x.group)}"></label>
+ <label>Remarks<textarea id="f_r" rows="2" maxlength="300">${esc(x.remarks)}</textarea></label>
+ <div class="btns"><button class="btn" onclick="saveRes()">Save Reservation</button><button class="btn ghost" onclick="closeM()">Cancel</button></div></div></div>`;
+ fch()}
+const rf=()=>{const cb=[...document.querySelectorAll('.fb')],beds=cb.length?cb.filter(c=>c.checked).map(c=>+c.value):[+$('#f_bed').value];return {ci:$('#f_ci').value.trim(),room:$('#f_room').value,bed:beds[0]??0,beds,date:$('#f_date').value,start:+$('#f_s').value,end:+$('#f_e').value,group:$('#f_g').value.trim(),remarks:$('#f_r').value.trim()}};
+function bedUI(v){
+ if(v.room!=WARD)return '<select id="f_bed"><option value="0">Whole room</option></select>';
+ if(U.form.id)return `<select id="f_bed" onchange="fch()">${bedOpts(v)}</select>`;
+ return bedsOf(WARD).map(b=>{const c=v.date&&v.start<v.end&&clash({...v,bed:b});return `<label class="bc"><input type="checkbox" class="fb" value="${b}" ${(v.beds||[]).includes(b)?'checked':''} onchange="fch()">Bed ${b} <small style="color:${c?'#c33':'#2e9e5b'}">${c?'occupied':'free'}</small></label>`}).join('')+'<br><small>Tick several beds to reserve them all at once for this instructor.</small>'}
+function fch(){const prev=U.form.room,v=rf();
+ if(v.room==WARD){v.beds=v.beds.filter(b=>b>=1&&b<=S.rooms[WARD]);if(prev!=WARD||(U.form.id&&!v.beds.length))v.beds=[1]}else v.beds=[0];
+ v.bed=v.beds[0]||(v.room==WARD?1:0);U.form={...U.form,...v};
+ $('#f_bw').style.display=v.room==WARD?'':'none';$('#f_bg').innerHTML=bedUI(U.form);
+ $('#pv').textContent=v.end>v.start?'Duration: '+dur(v.end-v.start)+' ('+t2s(v.start)+' – '+t2s(v.end)+')':'Duration: end time must be after start time';
+ const fw=v.date&&dow(v.date)?v.beds.map(b=>{const w=freeWin(v.room,b,v.date,U.form.id);return loc(v.room,b)+': '+(w.length?fwTxt(w):'fully booked')}).join(' | '):'';
+ $('#fw').textContent=fw?'Free times on '+lbl(v.date)+' — '+fw:'';
+ renderMain()}
+function saveRes(){const v=rf(),id=U.form.id,e=$('#err'),bad=m=>{e.textContent=m;e.style.display='block'};
+ const bs=v.room==WARD?v.beds:[0];
+ if(!v.ci)return bad("Please enter the Clinical Instructor's name.");
+ if(!ROOMS.includes(v.room)||!bs.length||!bs.every(b=>v.room==WARD?(b>=1&&b<=S.rooms[WARD]):b==0))return bad(v.room==WARD?'Please tick at least one bed.':'Please choose a valid room.');
+ if(!v.date)return bad('Please choose a reservation date.');
+ if(dow(v.date)==0)return bad('Sundays are not available. Choose a date from Monday to Saturday.');
+ if(!(v.start<v.end))return bad('Start time must be earlier than end time.');
+ if(v.start<OPEN||v.end>CLOSE)return bad('Reservations must be between 7:30 AM and 7:30 PM.');
+ const cs=bs.map(b=>[b,clash({...v,bed:b},id)]).filter(x=>x[1]);
+ if(cs.length)return bad('Conflict: '+cs.map(([b,c])=>`${loc(v.room,b)} is already reserved by CI ${c.ci} from ${t2s(c.start)} to ${t2s(c.end)}`).join('; ')+'. Nothing was saved.');
+ const base={ci:v.ci,room:v.room,date:v.date,start:v.start,end:v.end,group:v.group,remarks:v.remarks};
+ if(id)Object.assign(S.res.find(r=>r.id==id),base,{bed:bs[0]});
+ else bs.forEach(b=>S.res.push({...base,bed:b,id:'r'+Date.now().toString(36)+b+Math.random().toString(36).slice(2,6)}));
+ save();U.form=null;$('#modal').innerHTML='';goDate(v.date);toast((bs.length>1?bs.length+' beds reserved':'Reservation saved')+'. Duration: '+dur(v.end-v.start))}
+function closeM(){U.form=null;$('#modal').innerHTML='';renderMain()}
+function cell(r,b,s,e){openForm(null,{room:r,bed:b,date:U.date,start:s,end:e||Math.min(s+60,CLOSE)})}
+function showRes(id){const x=S.res.find(r=>r.id==id);if(!x)return;
+ $('#modal').innerHTML=`<div class="ov"><div class="mod"><h2>CI ${esc(x.ci)} ${x.sample?'<span class="tag tf">SAMPLE</span>':''}</h2><dl>
+ <dt>Clinical Instructor</dt><dd>${esc(x.ci)}</dd><dt>${x.bed?'Room and Bed':'Room'}</dt><dd>${loc(x.room,x.bed)}</dd><dt>Date</dt><dd>${lbl(x.date)}, ${x.date}</dd>
+ <dt>Start Time</dt><dd>${t2s(x.start)}</dd><dt>End Time</dt><dd>${t2s(x.end)}</dd><dt>Total Duration</dt><dd>${dur(x.end-x.start)}</dd>
+ ${x.group?`<dt>Group/Section</dt><dd>${esc(x.group)}</dd>`:''}${x.remarks?`<dt>Remarks</dt><dd>${esc(x.remarks)}</dd>`:''}</dl>
+ <div class="btns"><button class="btn" onclick="openForm('${x.id}')">Edit</button><button class="btn red" onclick="cancelRes('${x.id}')">Cancel Reservation</button><button class="btn ghost" onclick="closeM()">Close</button></div></div></div>`}
+function cancelRes(id){if(!confirm('Cancel and delete this reservation? This cannot be undone.'))return;S.res=S.res.filter(r=>r.id!=id);save();$('#modal').innerHTML='';render();toast('Reservation cancelled.')}
+/* ---------- beds, data tools ---------- */
+function bedsModal(){$('#modal').innerHTML=`<div class="ov"><div class="mod"><h2>Configure GENWARD Beds</h2><div id="err" class="err"></div>
+ <label>GENWARD beds (1–5)<input type="number" min="1" max="5" id="bc_GENWARD" value="${S.rooms.GENWARD}"></label><p>DR, OR, RR, ER and SIMR are reserved as whole rooms (no beds).</p>
+ <div class="btns"><button class="btn" onclick="saveBeds()">Save</button><button class="btn ghost" onclick="closeM()">Close</button></div></div></div>`}
+function saveBeds(){const n={};for(const r of [WARD]){const v=Math.round(+$('#bc_'+r).value);if(!(v>=1&&v<=5)){$('#err').textContent=r+': enter 1 to 5 beds.';$('#err').style.display='block';return}
+ if(S.res.some(x=>x.room==r&&x.bed>v)){$('#err').textContent=`${r} has reservations on beds above ${v}. Cancel or move them first.`;$('#err').style.display='block';return}n[r]=v}
+ S.rooms={...S.rooms,...n};save();closeM();render();toast('Bed configuration saved.')}
+function resetDemo(){if(!confirm('Replace ALL data with the sample demo data?'))return;S=demo();save();render();toast('Demo data restored.')}
+function rmSamples(){S.res=S.res.filter(x=>!x.sample);save();render();toast('Sample reservations removed.')}
+function clearAll(){if(!confirm('Delete ALL reservations? This cannot be undone.'))return;S.res=[];save();render();toast('All reservations cleared.')}
+function exportCsv(){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+ const rows=[['Instructor','Room','Bed','Date','Start','End','Duration','Group','Remarks'],...S.res.map(x=>[x.ci,x.room,x.bed||'',x.date,hm(x.start),hm(x.end),dur(x.end-x.start),x.group,x.remarks])];
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv'}));a.download='reservations.csv';a.click()}
+function parseCsv(t){const rows=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];
+ if(q){if(ch=='"'){if(t[i+1]=='"'){c+='"';i++}else q=false}else c+=ch}
+ else if(ch=='"')q=true;else if(ch==','){r.push(c);c=''}
+ else if(ch=='\n'||ch=='\r'){if(ch=='\r'&&t[i+1]=='\n')i++;r.push(c);rows.push(r);r=[];c=''}else c+=ch}
+ if(c||r.length){r.push(c);rows.push(r)}return rows}
+function importCsv(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{let ok=0,skip=0;
+ const tm=s=>{const m=/^(\d{1,2}):(\d{2})$/.exec((s||'').trim());return m?+m[1]*60+ +m[2]:NaN};
+ parseCsv(rd.result).slice(1).forEach(c=>{if(c.length<6)return;
+  const v={ci:(c[0]||'').trim(),room:(c[1]||'').trim().toUpperCase(),bed:(c[1]||'').trim().toUpperCase()==WARD?+c[2]:0,date:(c[3]||'').trim(),start:tm(c[4]),end:tm(c[5]),group:(c[7]||'').trim(),remarks:(c[8]||'').trim()};
+  const good=v.ci&&ROOMS.includes(v.room)&&(v.room==WARD?v.bed>=1&&v.bed<=S.rooms[WARD]:v.bed==0)&&/^\d{4}-\d\d-\d\d$/.test(v.date)&&dow(v.date)!=0&&v.start>=OPEN&&v.end<=CLOSE&&v.start<v.end&&!clash(v);
+  if(good){S.res.push({...v,id:'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)});ok++}else skip++});
+ save();render();toast(`Import done: ${ok} added, ${skip} skipped (invalid or conflicting).`);inp.value=''};rd.readAsText(f)}
+/* ---------- midnight rollover (Manila) ---------- */
+setInterval(()=>{const t=manilaToday();if(t!==U.today){const wasD=U.date==U.today,wasP=U.ws==pstart(U.today);U.today=t;if(wasP)U.ws=pstart(t);if(wasD)U.date=dow(t)?t:addDays(t,1);if(!days().includes(U.date))U.date=U.ws;render()}},30000);
+render();
+</script>
+</body>
+</html>
