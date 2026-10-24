@@ -10,6 +10,7 @@
 body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
 header{background:var(--navy);color:#fff;padding:14px 18px}
 h1{margin:0 0 10px;font-size:20px}
+#st{font-size:12px;font-weight:400;margin-left:10px;background:#ffffff26;padding:3px 10px;border-radius:12px;white-space:nowrap}
 .wrap{padding:14px 18px;max-width:1500px;margin:auto}
 .btn{border:0;border-radius:10px;padding:8px 14px;background:var(--teal);color:#fff;font-weight:600;cursor:pointer;font-size:13px}
 .btn.big{background:#fff;color:var(--navy);font-size:14px;padding:9px 18px}
@@ -73,12 +74,16 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}dt{font-wei
 </style>
 </head>
 <body>
-<header><h1>🏥 Clinical Room Reservation System</h1><div id="hdr"></div></header>
+<header><h1>🏥 Clinical Room Reservation System <small id="st"></small></h1><div id="hdr"></div></header>
 <div class="wrap"><div id="top"></div><div id="main"></div></div>
 <div id="modal"></div><div id="toast"></div>
 <input type="file" id="imp" accept=".csv" hidden onchange="importCsv(this)">
 <script>
 const ROOMS=['DR','OR','RR','ER','SIMR','GENWARD'],OPEN=450,CLOSE=1170,STEP=30,SW=44,KEY='clinres.v1';
+/* ===== SHARED DATABASE (optional): paste your Firebase Realtime Database URL between the quotes =====
+   Leave it empty to keep everything only in this browser. Example: 'https://your-project-default-rtdb.firebaseio.com' */
+const DB_URL='https://console.firebase.google.com/u/0/project/room-reservation-c216e/database/room-reservation-c216e-default-rtdb/data/~2F';
+const DB=DB_URL.trim().replace(/\/+$/,'');
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ---------- date & time helpers (Asia/Manila) ---------- */
@@ -94,14 +99,32 @@ const hm=m=>pad(Math.floor(m/60))+':'+pad(m%60);
 const dur=m=>{const h=Math.floor(m/60),r=m%60,p=[];if(h)p.push(h+(h==1?' hour':' hours'));if(r)p.push(r+' minutes');return p.join(' and ')||'0 minutes'};
 const sh=m=>(+(m/60).toFixed(2))+'h';
 const slots=[];for(let m=OPEN;m<CLOSE;m+=STEP)slots.push(m);
-function nowSlot(){const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date()).split(':');const m=+p[0]*60+ +p[1];return Math.min(1040,Math.max(OPEN,Math.floor(m/30)*30))}
+function nowSlot(){const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date()).split(':');const m=+p[0]*60+ +p[1];return Math.min(1140,Math.max(OPEN,Math.floor(m/30)*30))}
 /* ---------- data ---------- */
 function demo(){const mo=pstart(manilaToday()),rooms={};ROOMS.forEach(r=>rooms[r]=5);
  const mk=(i,ci,room,bed,off,s,e,g)=>({id:'s'+i,ci,room,bed,date:addDays(mo,off),start:s,end:e,group:g,remarks:'Sample data',sample:true});
  return{rooms,res:[mk(1,'Maria Santos','DR',0,0,450,630,'BSN 3A'),mk(2,'John Reyes','GENWARD',4,0,600,720,'BSN 2B'),mk(3,'Anna Cruz','OR',0,0,480,600,'BSN 4A'),mk(4,'John Reyes','GENWARD',2,1,780,990,'BSN 3C'),mk(5,'Maria Santos','DR',0,1,600,720,'BSN 3A'),mk(6,'Ben Lim','GENWARD',1,0,450,570,'BSN 3B')]}}
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.rooms&&Array.isArray(d.res)){d.res.forEach(x=>{if(x.room!='GENWARD')x.bed=0});return d}}catch(e){}return demo()}
-let S=load();
-const save=()=>localStorage.setItem(KEY,JSON.stringify({rooms:S.rooms,res:S.res}));save();
+const defRooms=()=>{const r={};ROOMS.forEach(x=>r[x]=5);return r};
+let S=DB?{rooms:defRooms(),res:[]}:load(),synced={},ready=!DB,pending=0;
+function setStatus(ok){const e=$('#st');if(e)e.textContent=!DB?'💾 Local only (not shared)':ok?'🟢 Shared · live':'🔴 Offline: changes not shared'}
+async function api(m,p,b){const r=await fetch(`${DB}/${p}.json`,{method:m,body:b===undefined?undefined:JSON.stringify(b)});if(!r.ok)throw new Error(r.status);return r.json()}
+/* save(): keeps a copy in this browser and, in shared mode, sends only what changed (adds, edits, deletes) */
+function save(){try{localStorage.setItem(KEY,JSON.stringify({rooms:S.rooms,res:S.res}))}catch(e){}
+ if(!DB)return;
+ const cur={},patch={};S.res.forEach(x=>cur[x.id]=x);
+ for(const id in cur)if(JSON.stringify(cur[id])!==synced[id])patch[id]=cur[id];
+ for(const id in synced)if(!cur[id])patch[id]=null;
+ synced=Object.fromEntries(S.res.map(x=>[x.id,JSON.stringify(x)]));pending++;
+ Promise.all([Object.keys(patch).length?api('PATCH','reservations',patch):0,api('PUT','rooms',S.rooms)]).then(()=>setStatus(true)).catch(()=>{setStatus(false);toast('Could not save to the shared database. Check your internet connection.')}).finally(()=>pending--)}
+/* sync(): downloads the latest shared reservations (runs every 5 seconds) */
+async function sync(){if(!DB||pending)return;
+ try{const [r,rm]=await Promise.all([api('GET','reservations'),api('GET','rooms')]);if(pending)return;
+  const res=Object.values(r||{}).filter(x=>x&&x.id),rooms=rm?{...S.rooms,...rm}:S.rooms,k=(a,b)=>JSON.stringify([a.map(x=>x.id+JSON.stringify(x)).sort(),b]);
+  const changed=k(res,rooms)!==k(S.res,S.rooms);S.res=res;S.rooms=rooms;
+  synced=Object.fromEntries(res.map(x=>[x.id,JSON.stringify(x)]));const first=!ready;ready=true;setStatus(true);if(changed||first)render()}
+ catch(e){setStatus(false)}}
+if(!DB)save();
 const U={today:manilaToday(),view:'week',page:'res',time:nowSlot(),open:{},q:'',fRoom:'',fCI:'',fStatus:'',all:false,form:null};
 U.date=dow(U.today)?U.today:addDays(U.today,1);U.ws=pstart(U.today);
 const days=()=>[0,1].flatMap(w=>[0,1,2,3,4,5].map(d=>addDays(U.ws,w*7+d)));
@@ -112,7 +135,7 @@ const covers=(room,bed,date,t)=>S.res.find(x=>x.room==room&&x.bed==bed&&x.date==
 function union(list){let tot=0,e=-1,s0=0;[...list].sort((a,b)=>a.start-b.start).forEach(x=>{if(x.start>e){if(e>=0)tot+=e-s0;s0=x.start;e=x.end}else e=Math.max(e,x.end)});return tot+(e>=0?e-s0:0)}
 function vis(room,bed){const rs=dayRes(room,bed,U.date),q=U.q.trim().toLowerCase();
  if(U.fRoom&&U.fRoom!=room)return false;
-if(U.fStatus=='available'&&!freeWin(room,bed,U.date).length)return false;if(U.fStatus=='occupied'&&!rs.length)return false;
+ if(U.fStatus=='available'&&!freeWin(room,bed,U.date).length)return false;if(U.fStatus=='occupied'&&!rs.length)return false;
  if(U.fCI&&!rs.some(x=>x.ci==U.fCI))return false;
  if(q&&!room.toLowerCase().includes(q)&&!rs.some(x=>x.ci.toLowerCase().includes(q)))return false;return true}
 const WARD='GENWARD',bedsOf=r=>r==WARD?[...Array(S.rooms[r]).keys()].map(i=>i+1):[0],loc=(r,b)=>b?`${r} — Bed ${b}`:r;
@@ -216,7 +239,7 @@ function fch(){const prev=U.form.room,v=rf();
  const fw=v.date&&dow(v.date)?v.beds.map(b=>{const w=freeWin(v.room,b,v.date,U.form.id);return loc(v.room,b)+': '+(w.length?fwTxt(w):'fully booked')}).join(' | '):'';
  $('#fw').textContent=fw?'Free times on '+lbl(v.date)+' — '+fw:'';
  renderMain()}
-function saveRes(){const v=rf(),id=U.form.id,e=$('#err'),bad=m=>{e.textContent=m;e.style.display='block'};
+async function saveRes(){const v=rf(),id=U.form.id,e=$('#err'),bad=m=>{e.textContent=m;e.style.display='block'};
  const bs=v.room==WARD?v.beds:[0];
  if(!v.ci)return bad("Please enter the Clinical Instructor's name.");
  if(!ROOMS.includes(v.room)||!bs.length||!bs.every(b=>v.room==WARD?(b>=1&&b<=S.rooms[WARD]):b==0))return bad(v.room==WARD?'Please tick at least one bed.':'Please choose a valid room.');
@@ -224,6 +247,9 @@ function saveRes(){const v=rf(),id=U.form.id,e=$('#err'),bad=m=>{e.textContent=m
  if(dow(v.date)==0)return bad('Sundays are not available. Choose a date from Monday to Saturday.');
  if(!(v.start<v.end))return bad('Start time must be earlier than end time.');
  if(v.start<OPEN||v.end>CLOSE)return bad('Reservations must be between 7:30 AM and 7:30 PM.');
+ if(DB&&!ready)return bad('Still connecting to the shared database. Try again in a moment.');
+ if(DB)await sync();
+ if(id&&!S.res.find(r=>r.id==id))return bad('This reservation was removed by someone else.');
  const cs=bs.map(b=>[b,clash({...v,bed:b},id)]).filter(x=>x[1]);
  if(cs.length)return bad('Conflict: '+cs.map(([b,c])=>`${loc(v.room,b)} is already reserved by CI ${c.ci} from ${t2s(c.start)} to ${t2s(c.end)}`).join('; ')+'. Nothing was saved.');
  const base={ci:v.ci,room:v.room,date:v.date,start:v.start,end:v.end,group:v.group,remarks:v.remarks};
@@ -246,9 +272,9 @@ function bedsModal(){$('#modal').innerHTML=`<div class="ov"><div class="mod"><h2
 function saveBeds(){const n={};for(const r of [WARD]){const v=Math.round(+$('#bc_'+r).value);if(!(v>=1&&v<=5)){$('#err').textContent=r+': enter 1 to 5 beds.';$('#err').style.display='block';return}
  if(S.res.some(x=>x.room==r&&x.bed>v)){$('#err').textContent=`${r} has reservations on beds above ${v}. Cancel or move them first.`;$('#err').style.display='block';return}n[r]=v}
  S.rooms={...S.rooms,...n};save();closeM();render();toast('Bed configuration saved.')}
-function resetDemo(){if(!confirm('Replace ALL data with the sample demo data?'))return;S=demo();save();render();toast('Demo data restored.')}
+function resetDemo(){if(!confirm('Replace ALL data with the sample demo data?'+(DB?' This affects EVERYONE using the shared link.':'')))return;S=demo();save();render();toast('Demo data restored.')}
 function rmSamples(){S.res=S.res.filter(x=>!x.sample);save();render();toast('Sample reservations removed.')}
-function clearAll(){if(!confirm('Delete ALL reservations? This cannot be undone.'))return;S.res=[];save();render();toast('All reservations cleared.')}
+function clearAll(){if(!confirm('Delete ALL reservations? This cannot be undone.'+(DB?' This affects EVERYONE using the shared link.':'')))return;S.res=[];save();render();toast('All reservations cleared.')}
 function exportCsv(){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
  const rows=[['Instructor','Room','Bed','Date','Start','End','Duration','Group','Remarks'],...S.res.map(x=>[x.ci,x.room,x.bed||'',x.date,hm(x.start),hm(x.end),dur(x.end-x.start),x.group,x.remarks])];
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv'}));a.download='reservations.csv';a.click()}
@@ -266,7 +292,8 @@ function importCsv(inp){const f=inp.files[0];if(!f)return;const rd=new FileReade
  save();render();toast(`Import done: ${ok} added, ${skip} skipped (invalid or conflicting).`);inp.value=''};rd.readAsText(f)}
 /* ---------- midnight rollover (Manila) ---------- */
 setInterval(()=>{const t=manilaToday();if(t!==U.today){const wasD=U.date==U.today,wasP=U.ws==pstart(U.today);U.today=t;if(wasP)U.ws=pstart(t);if(wasD)U.date=dow(t)?t:addDays(t,1);if(!days().includes(U.date))U.date=U.ws;render()}},30000);
-render();
+render();setStatus(!DB);
+if(DB){$('#st').textContent='🟡 Connecting…';sync();setInterval(sync,5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()})}
 </script>
 </body>
 </html>
