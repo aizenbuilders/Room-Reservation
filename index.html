@@ -158,9 +158,9 @@ function availPage(){let A='',N='',na=0,nu=0;
  <div class="pn"><h3>⛔ Unavailable Rooms &amp; Beds (${nu})</h3><small>${lbl(U.date)} · 7:30 AM – 7:30 PM · times when the room or bed is reserved</small>${N||'<p>No reservations on this date.</p>'}</div></div>`}
 function timeline(){
  let h=`<div class="scroll"><div class="tl"><div class="row hd"><div class="lab">${lbl(U.date)}</div><div class="off"></div>${slots.map(s=>`<div class="sh">${t2s(s).replace(' ','<br>')}</div>`).join('')}<div class="off"></div></div>`,n=0;
- ROOMS.forEach(r=>{const bs=bedsOf(r),free=bs.filter(b=>!covers(r,b,U.date,U.time)).length,vb=bs.filter(b=>vis(r,b));if(!vb.length)return;n++;
+ ROOMS.forEach(r=>{const bs=bedsOf(r),fws=bs.map(b=>[b,freeWin(r,b,U.date)[0]]).filter(x=>x[1]),free=fws.length,ear=[...fws].sort((a,b)=>a[1][0]-b[1][0])[0],vb=bs.filter(b=>vis(r,b));if(!vb.length)return;n++;
   const open=U.open[r]!==false;
-  h+=`<div class="rh" onclick="tog('${r}')"><div class="in"><b>${open?'▼':'▶'} ${r}</b><span class="tag ${free?'tp':'tf'}">${r==WARD?(free?'PARTIALLY AVAILABLE':'FULLY OCCUPIED'):(free?'AVAILABLE':'OCCUPIED')}</span><small>${r==WARD?free+'/'+bs.length+' beds free':'Whole room'} at ${t2s(U.time)}</small></div></div>`;
+  h+=`<div class="rh" onclick="tog('${r}')"><div class="in"><b>${open?'▼':'▶'} ${r}</b><span class="tag ${free?'tp':'tf'}">${r==WARD?(free?'PARTIALLY AVAILABLE':'FULLY OCCUPIED'):(free?'AVAILABLE':'OCCUPIED')}</span><small>${ear?'Earliest available: '+t2s(ear[1][0])+(r==WARD?' (Bed '+ear[0]+') · '+free+'/'+bs.length+' beds have free time':' · free until '+t2s(ear[1][1])):'Fully booked all day'}</small></div></div>`;
   if(open)vb.forEach(b=>h+=bedRow(r,b))});
  if(!n)h+='<p style="padding:20px">No rooms or beds match the current filters.</p>';
  return h+'</div></div>'}
