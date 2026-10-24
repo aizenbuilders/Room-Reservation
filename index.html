@@ -78,7 +78,7 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}dt{font-wei
 <div id="modal"></div><div id="toast"></div>
 <input type="file" id="imp" accept=".csv" hidden onchange="importCsv(this)">
 <script>
-const ROOMS=['DR','OR','RR','ER','SIMR','GENWARD'],OPEN=450,CLOSE=1110,STEP=30,SW=44,KEY='clinres.v1';
+const ROOMS=['DR','OR','RR','ER','SIMR','GENWARD'],OPEN=450,CLOSE=1170,STEP=30,SW=44,KEY='clinres.v1';
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ---------- date & time helpers (Asia/Manila) ---------- */
@@ -94,7 +94,7 @@ const hm=m=>pad(Math.floor(m/60))+':'+pad(m%60);
 const dur=m=>{const h=Math.floor(m/60),r=m%60,p=[];if(h)p.push(h+(h==1?' hour':' hours'));if(r)p.push(r+' minutes');return p.join(' and ')||'0 minutes'};
 const sh=m=>(+(m/60).toFixed(2))+'h';
 const slots=[];for(let m=OPEN;m<CLOSE;m+=STEP)slots.push(m);
-function nowSlot(){const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date()).split(':');const m=+p[0]*60+ +p[1];return Math.min(1080,Math.max(OPEN,Math.floor(m/30)*30))}
+function nowSlot(){const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date()).split(':');const m=+p[0]*60+ +p[1];return Math.min(1040,Math.max(OPEN,Math.floor(m/30)*30))}
 /* ---------- data ---------- */
 function demo(){const mo=pstart(manilaToday()),rooms={};ROOMS.forEach(r=>rooms[r]=5);
  const mk=(i,ci,room,bed,off,s,e,g)=>({id:'s'+i,ci,room,bed,date:addDays(mo,off),start:s,end:e,group:g,remarks:'Sample data',sample:true});
@@ -156,11 +156,15 @@ function availPage(){let A='',N='',na=0,nu=0;
    N+=`<div class="it u" style="cursor:default">${nm}${rs.map(x=>`<span class="ln" onclick="showRes('${x.id}')">${t2s(x.start)} – ${t2s(x.end)} · CI ${esc(x.ci)} (${dur(x.end-x.start)})</span>`).join('')}<span><small>${fw.length?'Booked '+dur(union(rs)):'Fully booked all day'}</small></span>${bar}</div>`}}));
  return `<div class="av"><div class="pn"><h3>✅ Available Rooms &amp; Beds (${na})</h3><small>${lbl(U.date)} · 7:30 AM – 7:30 PM · times when the room or bed is free</small>${A||'<p>No room or bed has free time on this date.</p>'}</div>
  <div class="pn"><h3>⛔ Unavailable Rooms &amp; Beds (${nu})</h3><small>${lbl(U.date)} · 7:30 AM – 7:30 PM · times when the room or bed is reserved</small>${N||'<p>No reservations on this date.</p>'}</div></div>`}
+function roomHead(r,bs){const t=U.time,up=b=>freeWin(r,b,U.date).filter(w=>w[1]>t).map(w=>[Math.max(w[0],t),w[1]]);
+ const info=bs.map(b=>({b,c:covers(r,b,U.date,t),u:up(b)})),free=info.filter(x=>!x.c).length,nxt=info.filter(x=>x.u.length).sort((a,b)=>a.u[0][0]-b.u[0][0])[0];
+ if(r==WARD)return{free,txt:`${free}/${bs.length} beds free at ${t2s(t)} · `+(nxt?(free?'Earliest available: ':'Next available: ')+t2s(nxt.u[0][0])+' (Bed '+nxt.b+')':'No more free time today')};
+ const x=info[0];return{free,txt:x.c?`Occupied until ${t2s(x.c.end)} · `+(x.u.length?'Available again: '+fwTxt(x.u):'No more free time today'):(x.u.length?'Available: '+fwTxt(x.u):'No free time left today')}}
 function timeline(){
  let h=`<div class="scroll"><div class="tl"><div class="row hd"><div class="lab">${lbl(U.date)}</div><div class="off"></div>${slots.map(s=>`<div class="sh">${t2s(s).replace(' ','<br>')}</div>`).join('')}<div class="off"></div></div>`,n=0;
- ROOMS.forEach(r=>{const bs=bedsOf(r),fws=bs.map(b=>[b,freeWin(r,b,U.date)[0]]).filter(x=>x[1]),free=fws.length,ear=[...fws].sort((a,b)=>a[1][0]-b[1][0])[0],vb=bs.filter(b=>vis(r,b));if(!vb.length)return;n++;
+ ROOMS.forEach(r=>{const bs=bedsOf(r),H=roomHead(r,bs),free=H.free,vb=bs.filter(b=>vis(r,b));if(!vb.length)return;n++;
   const open=U.open[r]!==false;
-  h+=`<div class="rh" onclick="tog('${r}')"><div class="in"><b>${open?'▼':'▶'} ${r}</b><span class="tag ${free?'tp':'tf'}">${r==WARD?(free?'PARTIALLY AVAILABLE':'FULLY OCCUPIED'):(free?'AVAILABLE':'OCCUPIED')}</span><small>${ear?'Earliest available: '+t2s(ear[1][0])+(r==WARD?' (Bed '+ear[0]+') · '+free+'/'+bs.length+' beds have free time':' · free until '+t2s(ear[1][1])):'Fully booked all day'}</small></div></div>`;
+  h+=`<div class="rh" onclick="tog('${r}')"><div class="in"><b>${open?'▼':'▶'} ${r}</b><span class="tag ${free?'tp':'tf'}">${r==WARD?(free?'PARTIALLY AVAILABLE':'FULLY OCCUPIED'):(free?'AVAILABLE':'OCCUPIED')}</span><small>${H.txt}</small></div></div>`;
   if(open)vb.forEach(b=>h+=bedRow(r,b))});
  if(!n)h+='<p style="padding:20px">No rooms or beds match the current filters.</p>';
  return h+'</div></div>'}
